@@ -5,8 +5,7 @@ import Navigation from './components/Navigation';  
 import BookList from './components/BookList';
 import BookDetails from './components/BookDetails';
 import Login from './components/Login';
-import   
- Account from './components/Account';
+import Account from './components/Account';
 
 function App() {
   return (
