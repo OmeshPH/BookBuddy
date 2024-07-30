@@ -1,14 +1,26 @@
 import React from 'react';
-import './App.css';
-import Navigation from './components/Navigation';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navigation from './components/Navigation';   
+
+import BookList from './components/BookList';
+import BookDetails from './components/BookDetails';
+import Login from './components/Login';
+import   
+ Account from './components/Account';
 
 function App() {
   return (
-    <div className="App">
+    <Router>
       <Navigation />
-    </div>
+      <Routes>
+        <Route path="/" element={<BookList />} />
+        <Route path="/books/:id" element={<BookDetails />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/account" element={<Account />} />
+      </Routes>
+    </Router>
   );
 }
 
-export default App;   
+export default App;
 
