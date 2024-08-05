@@ -1,71 +1,106 @@
 import React, { useState, useEffect } from 'react';
 
-function Account() {
-  const [user, setUser] = useState(null);
-  const [checkedOutBooks, setCheckedOutBooks] = useState([]);
+const Account = ({ token, api }) => {
+  const [newUser, setNewUser] = useState(null);
+  const [checkedOut, setCheckedOut] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchData = async   () => {
+      if (!token) {
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
       try {
-        const response = await fetch('/api/users/me', {
+        const response = await fetch(`${api}/users/me`, {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}` // Include token
+            'Authorization': `Bearer ${token}`
           }
         });
-        const data = await response.json();
-        setUser(data);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch user data');
+        }
+
+        const   
+ jsonResponse = await response.json();
+        setNewUser(jsonResponse);
+        setCheckedOut(jsonResponse.checkedOutBooks || []); // Assuming checkedOutBooks in user data
       } catch (error) {
         console.error('Error fetching user data:', error);
+        setError(error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    const fetchCheckedOutBooks = async () => {
-      try {
-        const response = await fetch('/api/reservations', {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}` // Include token
-          }
-        });
-        const data = await response.json();
-        setCheckedOutBooks(data);
-      } catch (error) {
-        console.error('Error fetching checked-out books:', error);
-      }
-    };
+    fetchData();
+  }, [token, api]);
 
-    fetchUserData();
-    fetchCheckedOutBooks();
-  }, []);
+  const handleReturn = async (id) => {
+    try {
+      const response = await fetch(`${api}/books/${id}/return`, { // Assuming a /return endpoint
+        method: "POST", // Assuming POST request for return
+        headers: {
+          'Content-Type':'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to return book');
+      }
+
+      setCheckedOut(checkedOut.filter((book) => book.id !== id));
+    } catch (error) {
+      console.error('Error returning book:', error);
+      // Handle error, e.g., display error message to user
+    }
+  };
 
   return (
-    <div>
-      <h2>Account</h2>
-      {user ? (
-        <div>
-          <h3>Welcome, {user.firstName} {user.lastName}!</h3>
-          <p>Email: {user.email}</p>
-          {/* Add other user information as needed */}
-        </div>
-      ) : (
-        <p>Loading user information...</p>
-      )}
-
-      <h3>Checked Out Books</h3>
-      {checkedOutBooks.length > 0 ? (
-        <ul>
-          {checkedOutBooks.map(book => (
-            <li key={book.id}>
-              {book.title} - {book.author}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>You have no checked-out books.</p>
-      )}
-    </div>
+    <>
+      {
+        token ?
+          <>
+            {isLoading ? (
+              <p>Loading user data...</p>
+            ) : error ? (
+              <p>Error fetching user data: {error.message}</p>
+            ) : (
+              <div id="account-details">
+                <h1>Your account info</h1>
+                <p><b>Email:</b> {newUser.email}</p>
+                <div>
+                  {checkedOut.length === 0 ? (
+                    <h2>You do not have any books checked out!</h2>
+                  ) : (
+                    <h2>These are the books you currently have checked out</h2>
+                  )}
+                  {
+                    checkedOut.map((book) => (
+                      <div key={book.id} className="checkedoutBooks">
+                        <h4>{book.title}</h4>
+                        <img src={book.coverimage} height='150px' alt={book.title} />
+                        <br />
+                        <button onClick={() => handleReturn(book.id)}>Return Book</button>
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+            )}
+          </>
+        :
+          <h1>You must login first!</h1>
+      }
+    </>
   );
-}
+};
 
 export default Account;

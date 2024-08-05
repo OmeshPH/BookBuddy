@@ -1,91 +1,78 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AuthService from './AuthService';
 
-function Login() {
-  const [email, setEmail] = useState('');
+const Login = () => {
+  const   
+ [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const   
- [firstname, setFirstname] = useState('');
-  const [lastname, setLastname] = useState('');
-  const   
- [errorMessage, setErrorMessage] = useState('');
-  const navigate = useNavigate();
+ navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMessage('');   
+    e.preventDefault();   
 
+    setErrorMessage('');
 
-    // Basic input validation
     if (!email || !password) {
-      setErrorMessage('Email and password are required');
-      return;
-    }
-    if (!isValidEmail(email)) {
-      setErrorMessage('Invalid email format');
-      return;
-    }
-    if (password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters long');
+      setErrorMessage('Please fill in all fields');
       return;
     }
 
-    const isLogin = !!email && !!password && !firstname && !lastname;
-    const endpoint = isLogin ? '/api/users/login' : '/api/users/register';
-    const body = isLogin
-      ? JSON.stringify({ email, password })
-      : JSON.stringify({ email, password, firstname, lastname });
+    setIsLoading(true);
 
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'An error occurred' }));
-        setErrorMessage(errorData.message || 'An error occurred');
-        return;
-      }
-
-      const data = await response.json();
-      console.log('Login/Registration successful:', data);
-      localStorage.setItem('token', data.token); // Store token
+      const user = await AuthService.login(email, password);
       navigate('/account');
     } catch (error) {
-      console.error('Error logging in or registering:', error);
-      setErrorMessage('An unexpected error occurred');
+      setErrorMessage('Login failed. Please check your credentials.');
+      setIsLoading(false);
     }
   };
 
-  const isValidEmail = (email) => {
+  const validateEmail = (email) => {
+    // Basic email validation (improve as needed)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
   return (
-    <div>
-      <h2>Login/Register</h2>
+    <div id="login-form">
+      <h1>Login</h1>
       {errorMessage && <p className="error">{errorMessage}</p>}
       <form onSubmit={handleSubmit}>
-        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input type="password" placeholder="Password"   
- value={password} onChange={(e) => setPassword(e.target.value)} />
-        {!isLogin && (
-          <>
-            <input   
- type="text" placeholder="Firstname" value={firstname} onChange={(e) => setFirstname(e.target.value)} />
-            <input type="text" placeholder="Lastname" value={lastname} onChange={(e) => setLastname(e.target.value)} />
-          </>
-        )}
-        <button type="submit">Login/Register</button>   
+        <label>
+          Email:
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </label>
+        <label>
+          Password:
+          <input   
 
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </label>   
+
+        {isLoading ? (
+          <button type="button" disabled>
+            Logging in...
+          </button>
+        ) : (
+          <button type="submit">Login</button>
+        )}
       </form>
     </div>
   );
-}
+};
 
 export default Login;
